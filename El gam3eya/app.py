@@ -7,6 +7,7 @@ from livekit.agents import AgentSession, Agent
 from livekit.plugins import google
 from livekit.plugins.turn_detector import EOUPlugin
 from googleSheet import get_due_customers, mark_customer_contacted
+from livekit.plugins import openai
 
 load_dotenv()
 plugin = EOUPlugin()
@@ -22,7 +23,7 @@ class Assistant(Agent):
         print(f"Due Date: {due_date}, Amount Due: {amount_due}")
 
         # Enhanced prompt with customer data
-        intro = f"""أهلاً أستاذ {name}، أنا رضوى من الجمعية، باتطمن عليك!
+        intro = f"""أهلاً أستاذ {name}، أنا اسلام من الجمعية، باتطمن عليك!
 
         معلومات العميل المهمة:
         - الاسم: {name}
@@ -89,15 +90,18 @@ class Assistant(Agent):
 
 
 async def run_session(customer):
-    print(f"Running session for: {customer['name']}")  
+    print(f"Running session for: {customer['name']}") 
+
     session = AgentSession(
-        llm=google.beta.realtime.RealtimeModel(
-            model="gemini-2.5-flash-preview-native-audio-dialog",
-            voice="Aoede",
-            temperature=0.8,
-            api_key=os.getenv("GOOGLE_API_KEY")
-        ),
-    )
+        llm=openai.realtime.RealtimeModel.with_azure(
+            azure_deployment=os.environ["AZURE_DEPLOYMENT"],
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            temperature= "0.7", 
+            voice="ash"
+    ))
+    # ... tts, stt, vad, turn_detection, etc.
+    
 
     room_name = f"jam3eya-{customer['id']}"
     print(f"🎙️ Calling: {customer['name']} (Room: {room_name})")
@@ -126,5 +130,4 @@ async def entrypoint(ctx: agents.JobContext):
 
 if __name__ == "__main__":
     agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
-
 
